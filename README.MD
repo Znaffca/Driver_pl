@@ -1,16 +1,15 @@
 # DRIVER_pl - portfolio_lab project <br>
 Portfolio lab project - description in progress...
 
-#### 25.02.2019 - what is working:
-- in progress
+#### 14.03.2019 - what is working:
+- Create all necessary models
 
 
 #### To-Do-List:
- - in progress
+ - Add full CRUD to admin panel
  
 #### Known issues:
-- Donates Validation
-- probably much more than that...
+- never-ending bugs...
 
 ### Download and use it in your local environment:
 - Fork repository
