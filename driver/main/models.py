@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
+from django.utils.text import slugify
 
+from main.utils import get_unique_slug
 
 ANSWERS = (
     (1, "A"),
@@ -25,8 +27,8 @@ class Profile(models.Model):
         verbose_name_plural = "Profile użytkowników"
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=255, verbose_name="Kategoria")
+class CategoryTag(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Nazwa")
 
     def __str__(self):
         return f'{self.name}'
@@ -36,12 +38,19 @@ class Category(models.Model):
 
 
 class Advice(models.Model):
-    tag = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category', verbose_name="Kategoria")
     title = models. CharField(max_length=255, verbose_name="Tytuł")
-    description = models.TextField(verbose_name="Opis")
+    slug = models.SlugField(max_length=255, unique=True, verbose_name="Slug")
+    lead = models.TextField(verbose_name="Opis")
     img = models.ImageField(upload_to='images/advices', blank=True, null=True, verbose_name="Obraz")
     video = models.FileField(upload_to='videos/advices', blank=True, null=True, verbose_name="Wideo")
+    tag = models.ForeignKey(CategoryTag, on_delete=models.CASCADE, related_name='category', verbose_name="Kategoria")
+    count = models.IntegerField(verbose_name="Liczba poleceń")
     date_added = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = get_unique_slug(self, 'title', 'slug')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title}'
@@ -50,13 +59,40 @@ class Advice(models.Model):
         verbose_name_plural = "Porady motoryzacyjne"
 
 
-class TestTraing(models.Model):
-    name = models.CharField(max_length=128, verbose_name="Nazwa")
+class AdviceQuestion(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Użytkownik")
+    advice = models.ForeignKey(Advice, on_delete=models.CASCADE, verbose_name="Porada")
+    question = models.TextField(verbose_name="Treść pytania")
+
+    def __str(self):
+        return f'{self.user} - {self.advice}: {self.question}'
+
+    class Meta:
+        verbose_name_plural = "Pytania do porad"
+
+
+class TestTraining(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Użytkownik")
+    test_name = models.CharField(max_length=128, unique=True, verbose_name="Nazwa")
     advice = models.ForeignKey(Advice, on_delete=models.CASCADE, verbose_name="Do której porady")
     result = models.IntegerField(verbose_name="Wynik")
 
+    def _get_unique_test_name(self):
+        test_name = slugify(self.advice.title)
+        unique_test_name = f'{test_name}-test'
+        num = 1
+        while TestTraining.objects.filter(test_name=unique_test_name).exists():
+            unique_test_name = f'{test_name}-test-{num}'
+            num += 1
+        return unique_test_name
+
+    def save(self, *args, **kwargs):
+        if not self.test_name:
+            self.test_name = self._get_unique_test_name()
+        super().save(self, *args, **kwargs)
+
     def __str__(self):
-        return f'{self.name}'
+        return f'{self.result}'
 
     class Meta:
         verbose_name_plural = "Dostępne treningi"
@@ -64,7 +100,7 @@ class TestTraing(models.Model):
 
 class TrainingQuestion(models.Model):
     question = models.TextField(verbose_name="Treść pytania")
-    training = models.ForeignKey(TestTraing, on_delete=models.CASCADE, verbose_name="Trening")
+    training = models.ForeignKey(TestTraining, on_delete=models.CASCADE, verbose_name="Trening")
     correct_answer = models.IntegerField(choices=ANSWERS, verbose_name="Prawidłowa odpowiedź")
     answer_a = models.TextField(verbose_name="Odpowiedź A")
     file_a = models.FileField(upload_to='answer_files/', null=True, blank=True, verbose_name="Media A")
@@ -83,11 +119,17 @@ class TrainingQuestion(models.Model):
 
 
 class ForumPost(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="category_tag")
+    category = models.ForeignKey(CategoryTag, on_delete=models.CASCADE, related_name="category_tag")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_question')
-    title = models.CharField(max_length=255)
-    description = models.TextField()
-    date = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=255, verbose_name="Tytuł")
+    slug = models.SlugField(max_length=255, verbose_name="Slug")
+    description = models.TextField(verbose_name="Slug")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = get_unique_slug(self, 'title', 'slug')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.title} - {self.user}'
