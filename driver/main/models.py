@@ -16,7 +16,7 @@ class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Użytkownik")
     date_of_birth = models.DateField(blank=True, null=True, verbose_name="Data urodzenia")
     description = models.CharField(max_length=255, verbose_name="Opis")
-    photo = models.ImageField(upload_to='users/%Y/%m/%d', blank=True, null=True, verbose_name="Zdjęcie profilowe")
+    photo = models.ImageField(upload_to='users/%Y/%m/%d', null=True, blank=True, verbose_name="Zdjęcie profilowe")
     total_points = models.IntegerField(null=True, blank=True)
     date_added = models.DateTimeField(auto_now_add=True)
 
@@ -44,7 +44,7 @@ class Advice(models.Model):
     img = models.ImageField(upload_to='images/advices', blank=True, null=True, verbose_name="Obraz")
     video = models.FileField(upload_to='videos/advices', blank=True, null=True, verbose_name="Wideo")
     tag = models.ForeignKey(CategoryTag, on_delete=models.CASCADE, related_name='category', verbose_name="Kategoria")
-    count = models.IntegerField(verbose_name="Liczba poleceń")
+    count = models.IntegerField(verbose_name="Liczba poleceń", default=0)
     date_added = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
 
     def save(self, *args, **kwargs):
@@ -119,11 +119,11 @@ class TrainingQuestion(models.Model):
 
 
 class ForumPost(models.Model):
-    category = models.ForeignKey(CategoryTag, on_delete=models.CASCADE, related_name="category_tag")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_question')
+    category = models.ForeignKey(CategoryTag, on_delete=models.CASCADE, related_name="category_tag", verbose_name="Kategoria")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_question', verbose_name="Użytkownik")
     title = models.CharField(max_length=255, verbose_name="Tytuł")
     slug = models.SlugField(max_length=255, verbose_name="Slug")
-    description = models.TextField(verbose_name="Slug")
+    description = models.TextField(verbose_name="Treść wiadomości")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
 
     def save(self, *args, **kwargs):
